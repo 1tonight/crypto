@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Permission Slip Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5); /* Dim background */
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 8px;
+        }
+        .close-button {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        /* Custom scrollbar for lists */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        /* Ensure buttons have good tap targets */
+        button, input[type="submit"], input[type="button"] {
+            padding: 0.75rem 1.5rem; /* Tailwind p-3 px-6 */
+            margin: 0.5rem; /* Tailwind m-2 */
+        }
+        input[type="text"], input[type="email"], textarea {
+            padding: 0.75rem; /* Tailwind p-3 */
+        }
+
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col items-center justify-center p-4">
+
+    <div class="w-full max-w-4xl bg-white p-6 sm:p-8 rounded-xl shadow-2xl">
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl sm:text-4xl font-bold text-sky-600">Permission Slip Manager</h1>
+            <p class="text-slate-500 mt-2">Streamline your school forms and permissions.</p>
+        </header>
+
+        <div id="roleSelectionView" class="text-center mb-8">
+            <h2 class="text-2xl font-semibold mb-6">Select Your Role</h2>
+            <div class="flex flex-col sm:flex-row justify-center gap-4">
+                <button id="showAdminViewBtn" class="bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-150 ease-in-out">
+                    Access Admin Panel
+                </button>
+                <button id="showParentViewBtn" class="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-150 ease-in-out">
+                    Access Parent Portal
+                </button>
+            </div>
+        </div>
+
+        <div id="adminView" class="hidden">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-semibold text-sky-700">Admin Panel</h2>
+                <button id="adminBackToRoleSelectionBtn" class="text-sm text-sky-600 hover:text-sky-800 font-medium">&larr; Back to Role Selection</button>
+            </div>
+
+            <div class="bg-slate-50 p-6 rounded-lg shadow mb-8">
+                <h3 class="text-xl font-semibold mb-4 text-slate-700">Create New Permission Slip</h3>
+                <form id="createFormAdmin" class="space-y-4">
+                    <div>
+                        <label for="formTitle" class="block text-sm font-medium text-slate-600">Form Title</label>
+                        <input type="text" id="formTitle" name="formTitle" required class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm p-3">
+                    </div>
+                    <div>
+                        <label for="formDescription" class="block text-sm font-medium text-slate-600">Description/Details</label>
+                        <textarea id="formDescription" name="formDescription" rows="3" required class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm p-3"></textarea>
+                    </div>
+                    <div>
+                        <label for="studentName" class="block text-sm font-medium text-slate-600">Student's Full Name</label>
+                        <input type="text" id="studentName" name="studentName" required class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm p-3">
+                    </div>
+                    <div>
+                        <label for="parentEmail" class="block text-sm font-medium text-slate-600">Parent's Email</label>
+                        <input type="email" id="parentEmail" name="parentEmail" required class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm p-3">
+                    </div>
+                    <button type="submit" class="w-full sm:w-auto bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-150 ease-in-out">Create & Send Form</button>
+                </form>
+            </div>
+
+            <div>
+                <h3 class="text-xl font-semibold mb-4 text-slate-700">Manage Forms</h3>
+                <div id="adminFormsList" class="space-y-4 max-h-96 overflow-y-auto custom-scrollbar bg-slate-50 p-4 rounded-lg shadow">
+                    <p class="text-slate-500">No forms created yet.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="parentView" class="hidden">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-semibold text-emerald-700">Parent Portal</h2>
+                <button id="parentBackToRoleSelectionBtn" class="text-sm text-emerald-600 hover:text-emerald-800 font-medium">&larr; Back to Role Selection</button>
+            </div>
+
+            <div class="bg-slate-50 p-6 rounded-lg shadow mb-8">
+                <form id="findFormsParent" class="space-y-4">
+                    <div>
+                        <label for="parentEmailLookup" class="block text-sm font-medium text-slate-600">Enter Your Email to View Forms</label>
+                        <input type="email" id="parentEmailLookup" name="parentEmailLookup" required class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm p-3">
+                    </div>
+                    <button type="submit" class="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-150 ease-in-out">Find My Forms</button>
+                </form>
+            </div>
+
+            <div id="parentFormsArea" class="hidden">
+                <h3 class="text-xl font-semibold mb-4 text-slate-700">Your Forms</h3>
+                <div id="parentFormsList" class="space-y-4 max-h-96 overflow-y-auto custom-scrollbar bg-slate-50 p-4 rounded-lg shadow">
+                    <p class="text-slate-500">No forms found for this email or all forms are signed.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="signingModal" class="modal">
+        <div class="modal-content bg-white p-6 rounded-lg shadow-xl">
+            <span id="closeSigningModal" class="close-button">&times;</span>
+            <h3 id="signingModalTitle" class="text-xl font-semibold mb-4 text-slate-700">Sign Permission Slip</h3>
+            <div id="signingModalFormDetails" class="mb-4 text-sm text-slate-600 space-y-2">
+                <p><strong>Description:</strong> <span id="signingModalDescription"></span></p>
+                <p><strong>Student:</strong> <span id="signingModalStudentName"></span></p>
+            </div>
+            <form id="signatureForm" class="space-y-4">
+                <input type="hidden" id="signingFormId">
+                <div>
+                    <label for="parentEmergencyContact" class="block text-sm font-medium text-slate-600">Emergency Contact Number (Optional)</label>
+                    <input type="text" id="parentEmergencyContact" name="parentEmergencyContact" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm p-3">
+                </div>
+                <div class="flex items-start">
+                    <div class="flex items-center h-5">
+                        <input id="consentCheckbox" name="consentCheckbox" type="checkbox" required class="focus:ring-emerald-500 h-4 w-4 text-emerald-600 border-slate-300 rounded">
+                    </div>
+                    <div class="ml-3 text-sm">
+                        <label for="consentCheckbox" class="font-medium text-slate-700">I acknowledge and agree to the terms.</label>
+                        <p class="text-slate-500">By checking this box, I am electronically signing this document.</p>
+                    </div>
+                </div>
+                <div>
+                    <label for="typedSignature" class="block text-sm font-medium text-slate-600">Type Your Full Name to Confirm Signature</label>
+                    <input type="text" id="typedSignature" name="typedSignature" required class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm p-3">
+                </div>
+                <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-150 ease-in-out">Submit Signature</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="messageModal" class="modal">
+        <div class="modal-content bg-white p-6 rounded-lg shadow-xl text-center">
+            <span id="closeMessageModal" class="close-button">&times;</span>
+            <h3 id="messageModalTitle" class="text-xl font-semibold mb-4">Notification</h3>
+            <p id="messageModalText" class="text-slate-600 mb-6"></p>
+            <button id="messageModalOkButton" class="bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 px-4 rounded-lg">OK</button>
+        </div>
+    </div>
+
+
+    <script>
+        // DOM Elements
+        const roleSelectionView = document.getElementById('roleSelectionView');
+        const adminView = document.getElementById('adminView');
+        const parentView = document.getElementById('parentView');
+
+        const showAdminViewBtn = document.getElementById('showAdminViewBtn');
+        const showParentViewBtn = document.getElementById('showParentViewBtn');
+        const adminBackToRoleSelectionBtn = document.getElementById('adminBackToRoleSelectionBtn');
+        const parentBackToRoleSelectionBtn = document.getElementById('parentBackToRoleSelectionBtn');
+
+        const createFormAdmin = document.getElementById('createFormAdmin');
+        const adminFormsList = document.getElementById('adminFormsList');
+
+        const findFormsParent = document.getElementById('findFormsParent');
+        const parentFormsArea = document.getElementById('parentFormsArea');
+        const parentFormsList = document.getElementById('parentFormsList');
+        const parentEmailLookupInput = document.getElementById('parentEmailLookup');
+
+        const signingModal = document.getElementById('signingModal');
+        const closeSigningModal = document.getElementById('closeSigningModal');
+        const signingModalTitle = document.getElementById('signingModalTitle');
+        const signingModalDescription = document.getElementById('signingModalDescription');
+        const signingModalStudentName = document.getElementById('signingModalStudentName');
+        const signatureForm = document.getElementById('signatureForm');
+        const signingFormIdInput = document.getElementById('signingFormId');
+        const parentEmergencyContactInput = document.getElementById('parentEmergencyContact');
+        const consentCheckbox = document.getElementById('consentCheckbox');
+        const typedSignatureInput = document.getElementById('typedSignature');
+
+        const messageModal = document.getElementById('messageModal');
+        const messageModalTitle = document.getElementById('messageModalTitle');
+        const messageModalText = document.getElementById('messageModalText');
+        const closeMessageModal = document.getElementById('closeMessageModal');
+        const messageModalOkButton = document.getElementById('messageModalOkButton');
+
+        // --- Utility Functions ---
+        function showView(viewToShow) {
+            roleSelectionView.classList.add('hidden');
+            adminView.classList.add('hidden');
+            parentView.classList.add('hidden');
+            viewToShow.classList.remove('hidden');
+        }
+
+        function showMessage(title, text) {
+            messageModalTitle.textContent = title;
+            messageModalText.textContent = text;
+            messageModal.style.display = 'flex';
+        }
+
+        closeMessageModal.onclick = () => messageModal.style.display = 'none';
+        messageModalOkButton.onclick = () => messageModal.style.display = 'none';
+        window.onclick = function(event) {
+            if (event.target == messageModal) {
+                messageModal.style.display = "none";
+            }
+            if (event.target == signingModal) {
+                signingModal.style.display = "none";
+            }
+        }
+
+        // --- Data Management (localStorage) ---
+        function getForms() {
+            return JSON.parse(localStorage.getItem('permissionForms') || '[]');
+        }
+
+        function saveForms(forms) {
+            localStorage.setItem('permissionForms', JSON.stringify(forms));
+        }
+
+        // --- Admin Logic ---
+        function renderAdminForms() {
+            const forms = getForms();
+            adminFormsList.innerHTML = ''; // Clear current list
+
+            if (forms.length === 0) {
+                adminFormsList.innerHTML = '<p class="text-slate-500">No forms created yet.</p>';
+                return;
+            }
+
+            forms.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)); // Show newest first
+
+            forms.forEach(form => {
+                const formElement = document.createElement('div');
+                formElement.className = 'p-4 bg-white rounded-lg shadow border border-slate-200';
+                formElement.innerHTML = `
+                    <h4 class="font-semibold text-md text-sky-700">${form.title}</h4>
+                    <p class="text-sm text-slate-600">For: ${form.studentName} (Parent: ${form.parentEmail})</p>
+                    <p class="text-sm text-slate-500">Created: ${new Date(form.createdAt).toLocaleDateString()}</p>
+                    <p class="text-sm font-medium">Status: 
+                        <span class="${form.status === 'Signed' ? 'text-emerald-600' : 'text-amber-600'}">${form.status}</span>
+                    </p>
+                    ${form.status === 'Signed' ? `<p class="text-sm text-slate-500">Signed by: ${form.signedBy} on ${new Date(form.signedAt).toLocaleString()}</p>` : ''}
+                     ${form.status === 'Pending' ? `<button data-form-id="${form.id}" class="mt-2 text-xs bg-amber-100 text-amber-700 hover:bg-amber-200 py-1 px-2 rounded send-reminder-btn">Send Reminder (Simulated)</button>` : ''}
+                `;
+                adminFormsList.appendChild(formElement);
+            });
+            
+            document.querySelectorAll('.send-reminder-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const formId = e.target.dataset.formId;
+                    const forms = getForms();
+                    const form = forms.find(f => f.id === formId);
+                    if (form) {
+                         showMessage('Reminder Sent', `A reminder has been (simulated) sent to ${form.parentEmail} for the form: "${form.title}".`);
+                         console.log(`Simulated reminder for form ID ${formId} to ${form.parentEmail}`);
+                    }
+                });
+            });
+        }
+
+        createFormAdmin.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const forms = getForms();
+            const newForm = {
+                id: 'form_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                title: createFormAdmin.formTitle.value,
+                description: createFormAdmin.formDescription.value,
+                studentName: createFormAdmin.studentName.value,
+                parentEmail: createFormAdmin.parentEmail.value.toLowerCase(),
+                createdAt: new Date().toISOString(),
+                status: 'Pending', // Initially pending
+                signedBy: null,
+                signedAt: null,
+                parentEmergencyContact: null
+            };
+            forms.push(newForm);
+            saveForms(forms);
+            renderAdminForms();
+            showMessage('Form Created', `"${newForm.title}" has been created and is available for ${newForm.parentEmail}.`);
+            createFormAdmin.reset();
+        });
+
+        // --- Parent Logic ---
+        function renderParentForms(parentEmail) {
+            const forms = getForms();
+            const relevantForms = forms.filter(form => form.parentEmail === parentEmail.toLowerCase());
+            parentFormsList.innerHTML = ''; // Clear current list
+
+            if (relevantForms.length === 0) {
+                parentFormsList.innerHTML = '<p class="text-slate-500">No forms found for this email, or all forms are already signed.</p>';
+                return;
+            }
+            
+            relevantForms.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+
+            relevantForms.forEach(form => {
+                const formElement = document.createElement('div');
+                formElement.className = 'p-4 bg-white rounded-lg shadow border border-slate-200';
+                let actionButton = '';
+                if (form.status === 'Pending') {
+                    actionButton = `<button data-form-id="${form.id}" class="mt-2 w-full sm:w-auto bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-2 px-4 rounded-lg sign-form-btn transition duration-150 ease-in-out">View & Sign</button>`;
+                } else {
+                     actionButton = `<button disabled class="mt-2 w-full sm:w-auto bg-slate-300 text-slate-500 font-semibold py-2 px-4 rounded-lg cursor-not-allowed">Signed on ${new Date(form.signedAt).toLocaleDateString()}</button>`;
+                }
+
+                formElement.innerHTML = `
+                    <h4 class="font-semibold text-md text-emerald-700">${form.title}</h4>
+                    <p class="text-sm text-slate-600">For: ${form.studentName}</p>
+                    <p class="text-sm text-slate-500">Received: ${new Date(form.createdAt).toLocaleDateString()}</p>
+                    <p class="text-sm font-medium">Status: <span class="${form.status === 'Signed' ? 'text-emerald-600' : 'text-amber-600'}">${form.status}</span></p>
+                    ${actionButton}
+                `;
+                parentFormsList.appendChild(formElement);
+            });
+
+            document.querySelectorAll('.sign-form-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const formId = e.target.dataset.formId;
+                    openSigningModal(formId);
+                });
+            });
+        }
+
+        findFormsParent.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = parentEmailLookupInput.value;
+            if (email) {
+                parentFormsArea.classList.remove('hidden');
+                renderParentForms(email);
+            } else {
+                showMessage('Error', 'Please enter an email address.');
+            }
+        });
+
+        function openSigningModal(formId) {
+            const forms = getForms();
+            const formToSign = forms.find(form => form.id === formId);
+            if (formToSign) {
+                signingFormIdInput.value = formId;
+                signingModalTitle.textContent = `Sign: ${formToSign.title}`;
+                signingModalDescription.textContent = formToSign.description;
+                signingModalStudentName.textContent = formToSign.studentName;
+                parentEmergencyContactInput.value = formToSign.parentEmergencyContact || ''; // Pre-fill if exists
+                consentCheckbox.checked = false;
+                typedSignatureInput.value = '';
+                signingModal.style.display = 'flex';
+            }
+        }
+        
+        closeSigningModal.onclick = () => signingModal.style.display = 'none';
+
+        signatureForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const formId = signingFormIdInput.value;
+            const typedName = typedSignatureInput.value.trim();
+            const emergencyContact = parentEmergencyContactInput.value.trim();
+
+            if (!consentCheckbox.checked) {
+                showMessage('Error', 'You must check the consent box to sign.');
+                return;
+            }
+            if (!typedName) {
+                showMessage('Error', 'Please type your full name to confirm signature.');
+                return;
+            }
+
+            let forms = getForms();
+            const formIndex = forms.findIndex(form => form.id === formId);
+
+            if (formIndex > -1) {
+                forms[formIndex].status = 'Signed';
+                forms[formIndex].signedBy = typedName;
+                forms[formIndex].signedAt = new Date().toISOString();
+                forms[formIndex].parentEmergencyContact = emergencyContact;
+                saveForms(forms);
+                
+                signingModal.style.display = 'none';
+                showMessage('Success!', `Form "${forms[formIndex].title}" has been signed.`);
+                
+                // Re-render forms for the current parent view and admin view
+                const currentParentEmail = parentEmailLookupInput.value;
+                if (currentParentEmail) {
+                    renderParentForms(currentParentEmail);
+                }
+                renderAdminForms(); // Update admin view if it's active or becomes active
+            } else {
+                showMessage('Error', 'Could not find the form to sign. Please try again.');
+            }
+        });
+
+
+        // --- View Switching ---
+        showAdminViewBtn.addEventListener('click', () => {
+            showView(adminView);
+            renderAdminForms();
+        });
+        showParentViewBtn.addEventListener('click', () => {
+            showView(parentView);
+            parentFormsArea.classList.add('hidden'); // Hide list until email is entered
+            parentEmailLookupInput.value = ''; // Clear previous email
+            parentFormsList.innerHTML = '<p class="text-slate-500">Enter your email above to find forms.</p>';
+        });
+        adminBackToRoleSelectionBtn.addEventListener('click', () => showView(roleSelectionView));
+        parentBackToRoleSelectionBtn.addEventListener('click', () => showView(roleSelectionView));
+
+        // Initial Setup
+        showView(roleSelectionView); // Start with role selection
+
+    </script>
+</body>
+</html>
