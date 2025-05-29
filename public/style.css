@@ -1,0 +1,170 @@
+body { 
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    background-color: #f0f2f5; 
+    color: #333; 
+    margin: 0; 
+    padding: 20px; 
+    line-height: 1.6;
+}
+#app-container { 
+    max-width: 800px; 
+    margin: 20px auto; 
+    background-color: #fff; 
+    padding: 25px; 
+    border-radius: 8px; 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+}
+header { 
+    text-align: center; 
+    border-bottom: 1px solid #e0e0e0; 
+    padding-bottom: 20px; 
+    margin-bottom: 30px; 
+}
+h1 { color: #1877f2; margin-bottom: 5px; } /* Facebook blue */
+h2 { color: #333; margin-top: 0; margin-bottom: 15px; }
+h3 { color: #4b4f56; margin-top: 0; margin-bottom: 10px; } /* Darker grey */
+.subtitle { color: #dc3545; font-weight: bold; font-size: 0.9em; } /* Bootstrap danger red */
+
+.hidden { display: none !important; } /* Ensure hidden views stay hidden */
+
+.view-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #f0f0f0;
+}
+.card { 
+    background-color: #ffffff; 
+    border: 1px solid #dddfe2; /* Lighter border */
+    border-radius: 8px; 
+    padding: 20px; 
+    margin-top: 20px; 
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #606770; /* Medium grey */
+}
+input[type="text"], 
+input[type="email"], 
+input[type="password"], 
+textarea { 
+    width: 100%; 
+    padding: 10px; 
+    margin-bottom: 15px; 
+    border: 1px solid #ccd0d5; /* Input border */
+    border-radius: 6px; 
+    box-sizing: border-box; 
+    font-size: 1em;
+}
+textarea { resize: vertical; min-height: 80px; }
+
+button, .button { 
+    background-color: #1877f2; /* Facebook blue */
+    color: white; 
+    border: none; 
+    cursor: pointer; 
+    font-weight: bold; 
+    padding: 10px 15px;
+    border-radius: 6px;
+    font-size: 1em;
+    transition: background-color 0.2s ease-in-out;
+    display: inline-block; /* For alignment */
+    text-align: center;
+}
+button:hover, .button:hover { background-color: #166fe5; } /* Darker blue */
+button:disabled { background-color: #bcc0c4; cursor: not-allowed; }
+
+.danger-btn { background-color: #dc3545; } /* Bootstrap danger red */
+.danger-btn:hover { background-color: #c82333; }
+.secondary-btn { background-color: #6c757d; } /* Bootstrap secondary grey */
+.secondary-btn:hover { background-color: #5a6268; }
+
+.back-to-role-btn { background-color: transparent; color: #1877f2; padding-left: 0; font-weight: normal; }
+.back-to-role-btn:hover { text-decoration: underline; background-color: transparent; }
+
+
+.modal { 
+    display: none; 
+    position: fixed; 
+    z-index: 1000; 
+    left: 0; top: 0; 
+    width: 100%; height: 100%; 
+    overflow: auto; 
+    background-color: rgba(0,0,0,0.6); 
+    align-items: center; justify-content: center;
+}
+.modal-content { 
+    background-color: #fff; 
+    margin: auto; 
+    padding: 25px; 
+    border: none;
+    width: 90%; 
+    max-width: 550px; 
+    border-radius: 8px; 
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    position: relative; /* For close button positioning */
+}
+.close-button { 
+    color: #aaa; 
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 28px; 
+    font-weight: bold; 
+    cursor: pointer; 
+}
+.close-button:hover, .close-button:focus { color: black; text-decoration: none; }
+
+.signature-pad-container { 
+    border: 1px solid #ccd0d5; 
+    border-radius: 4px; 
+    margin-bottom: 10px; 
+    background-color: #f7f7f7;
+    height: 200px; /* Fixed height for canvas wrapper */
+    display: flex; /* To center canvas if it's smaller */
+    justify-content: center;
+    align-items: center;
+}
+#signature-pad { 
+    /* width and height attributes set in JS for correct drawing surface */
+    display: block; 
+    background-color: white; /* Ensure canvas background is white */
+} 
+
+.error-message { color: #dc3545; font-size: 0.9em; margin-top: 5px; }
+.success-message { color: #28a745; font-size: 0.9em; margin-top: 5px; }
+
+.message-area {
+    padding: 10px;
+    margin-bottom: 20px;
+    border-radius: 6px;
+    text-align: center;
+}
+.message-area.success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb;}
+.message-area.error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;}
+
+.form-details {
+    background-color: #f9f9f9;
+    border: 1px solid #eee;
+    padding: 15px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+}
+.form-details p { margin: 5px 0; }
+
+.consent-checkbox {
+    margin-top: 15px;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+}
+.consent-checkbox input[type="checkbox"] {
+    width: auto;
+    margin-right: 8px;
+}
