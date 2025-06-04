@@ -58,6 +58,9 @@
                     
                     <label for="parentEmail">Parent's Email:</label>
                     <input type="email" id="parentEmail" name="parentEmail" placeholder="e.g., parent@example.com" required>
+
+                    <label for="formFile">Attach Document (PDF, DOC, DOCX):</label>
+                    <input type="file" id="formFile" name="formFile" accept=".pdf,.doc,.docx" required>
                     
                     <button type="submit">Create & Send Form</button>
                     <div id="createFormErrorMessage" class="error-message"></div>
@@ -72,21 +75,56 @@
         </div>
 
         <div id="parentView" class="view hidden">
-            <div class="view-header">
-                <h2>Parent Portal</h2>
-                <button class="back-to-role-btn">&larr; Back to Role Selection</button>
-            </div>
-            <div class="card">
-                <form id="findFormsParent">
-                    <label for="parentEmailLookup">Enter Your Email to View Forms:</label>
-                    <input type="email" id="parentEmailLookup" name="parentEmailLookup" placeholder="Your Email Address" required>
-                    <button type="submit">Find My Forms</button>
+            <!-- Add inside #parentView in public/index.html -->
+             <div class="card">
+                <h3>Parent Login</h3>
+                <form id="parentLoginForm">
+                    <label for="parentLoginEmail">Email:</label>
+                    <input type="email" id="parentLoginEmail" required>
+                    <label for="parentLoginPassword">Password:</label>
+                    <input type="password" id="parentLoginPassword" required>
+                    <button type="submit">Login</button>
+                    <div id="parentLoginError" class="error-message"></div>
                 </form>
             </div>
-            <div id="parentFormsArea" class="hidden">
-                <h3>Your Forms</h3>
-                <div id="parentFormsList">
-                     <p>No forms found for this email or all forms are signed.</p>
+            <div class="card">
+                <h3>Parent Registration</h3>
+                <form id="parentRegisterForm">
+                    <label for="parentRegEmail">Email:</label>
+                    <input type="email" id="parentRegEmail" required>
+                    <label for="parentRegPassword">Password:</label>
+                    <input type="password" id="parentRegPassword" required>
+                    <button type="submit">Register</button>
+                    <div id="parentRegisterError" class="error-message"></div>
+                </form>
+            </div>
+            <div class="card">
+                <h3>Forgot Password?</h3>
+                <form id="parentForgotForm">
+                    <label for="parentForgotEmail">Email:</label>
+                    <input type="email" id="parentForgotEmail" required>
+                    <button type="submit">Send Reset Link</button>
+                    <div id="parentForgotMsg" class="error-message"></div>
+                </form>
+            </div>
+            <div class="view-header">
+                <div id="parentPortalArea" class="hidden">
+                    <div class="view-header">
+                        <h2>Parent Portal</h2>
+                        <button id="parentLogoutBtn" class="danger-btn" style="float:right; margin-bottom:10px;">Logout</button>
+                    </div>
+                <div class="card">
+                    <form id="findFormsParent">
+                        <label for="parentEmailLookup">Enter Your Email to View Forms:</label>
+                        <input type="email" id="parentEmailLookup" name="parentEmailLookup" placeholder="Your Email Address" required readonly>
+                        <button type="submit">Find My Forms</button>
+                    </form>
+                </div>
+                <div id="parentFormsArea" class="hidden">
+                    <h3>Your Forms</h3>
+                    <div id="parentFormsList">
+                        <p>No forms found for this email or all forms are signed.</p>
+                    </div>
                 </div>
             </div>
         </div>

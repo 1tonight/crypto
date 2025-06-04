@@ -22,7 +22,9 @@ async function setup() {
             signatureDataUrl TEXT,         -- Drawn signature image (for display)
             documentHash TEXT,             -- Hash of form content at time of signing
             auditTrail TEXT,               -- JSON array of events
-            cryptographic_signature TEXT   -- The RSA digital signature (hex/base64)
+            cryptographic_signature TEXT,  -- The RSA digital signature (hex/base64)
+            filePath TEXT,                 -- <--- Add this
+            originalFileName TEXT          -- <--- And this
         )
     `);
 
@@ -43,8 +45,16 @@ async function setup() {
             private_key TEXT NOT NULL     -- PEM formatted private key (SECURITY NOTE: Storing raw private keys server-side is risky in production)
         )
     `);
+        // Parents table for parent authentication
+    await db.exec(`
+        CREATE TABLE IF NOT EXISTS parents (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL
+        )
+    `);
 
-    console.log('Database setup complete: forms, users, and parent_rsa_keys tables are ready.');
+    console.log('Database setup complete: forms, users, parents and parent_rsa_keys tables are ready.');
     return db;
 }
 

@@ -18,10 +18,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const adminFormsList = document.getElementById('adminFormsList');
     const createFormErrorMessage = document.getElementById('createFormErrorMessage');
 
-    const findFormsParent = document.getElementById('findFormsParent');
+    const parentPortalArea = document.getElementById('parentPortalArea');
+    const parentLoginForm = document.getElementById('parentLoginForm');
+    const parentRegisterForm = document.getElementById('parentRegisterForm');
+    const parentForgotForm = document.getElementById('parentForgotForm');
+    const parentLoginError = document.getElementById('parentLoginError');
     const parentEmailLookupInput = document.getElementById('parentEmailLookup');
-    const parentFormsArea = document.getElementById('parentFormsArea');
-    const parentFormsList = document.getElementById('parentFormsList');
+    const findFormsParent = document.getElementById('findFormsParent');
+    const parentLogoutBtn = document.getElementById('parentLogoutBtn');
 
     const signingModal = document.getElementById('signingModal');
     const closeSigningModal = document.getElementById('closeSigningModal');
@@ -112,6 +116,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Login/Session State & Functions ---
     let isAdminLoggedIn = false;
+    let isParentLoggedIn = false;
+    let parentSessionEmail = null;
 
     async function checkLoginStatus() {
         try {
@@ -191,6 +197,20 @@ document.addEventListener('DOMContentLoaded', () => {
         parentFormsArea.classList.add('hidden');
         parentFormsList.innerHTML = '<p>Enter your email above to find forms.</p>';
     });
+    if (showParentViewBtn) {
+        showParentViewBtn.addEventListener('click', () => {
+            // Hide all views
+            document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+            // Show parent view
+            parentView.classList.remove('hidden');
+            // Show login/registration/forgot forms
+            parentLoginForm.parentElement.classList.remove('hidden');
+            parentRegisterForm.parentElement.classList.remove('hidden');
+            parentForgotForm.parentElement.classList.remove('hidden');
+            // Hide portal area
+            parentPortalArea.classList.add('hidden');
+        });
+    }
 
     backToRoleBtns.forEach(btn => {
         btn.addEventListener('click', () => showView(roleSelectionView));
@@ -229,6 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <th>Parent Email</th>
                                 <th>Status</th>
                                 <th>Digitally Signed</th>
+                                <th>Parent E-Signature</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -240,7 +261,13 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <td>${form.parentEmail}</td>
                                     <td>${form.status}</td>
                                     <td>${form.isDigitallySigned ? 'Yes' : 'No'}</td>
-                                    <td><button class="secondary-btn view-audit-btn" data-form-id="${form.id}">View Audit</button></td>
+                                    <td>
+                                        ${form.signatureDataUrl ? `<img src="${form.signatureDataUrl}" alt="Parent Signature" style="max-width:100px;max-height:50px;border:1px solid #ccc;" />` : '—'}
+                                    </td>
+                                    <td>
+                                        <button class="secondary-btn view-audit-btn" data-form-id="${form.id}">View Audit</button>
+                                        ${form.isDigitallySigned ? `<button class="verify-signature-btn" data-form-id="${form.id}">Verify Signature</button>` : ''}
+                                    </td>
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -254,25 +281,23 @@ document.addEventListener('DOMContentLoaded', () => {
     createFormAdmin.addEventListener('submit', async (e) => {
         e.preventDefault();
         createFormErrorMessage.textContent = '';
-        const formData = new FormData(createFormAdmin);
-        const data = Object.fromEntries(formData.entries());
-        
+        const formData = new FormData(createFormAdmin); // This will include the file
+
         try {
             const response = await fetch('/api/forms', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
+                body: formData // Let the browser set the Content-Type for multipart/form-data
             });
+            const data = await response.json();
             if (!response.ok) {
-                const errorData = await response.json();
-                if (errorData.errors && Array.isArray(errorData.errors)) {
-                    createFormErrorMessage.innerHTML = errorData.errors.map(err => `<span>${err.msg}</span>`).join('<br>');
-                } else if (errorData.error) {
-                     createFormErrorMessage.textContent = errorData.error;
+                if (data.errors && Array.isArray(data.errors)) {
+                    createFormErrorMessage.innerHTML = data.errors.map(err => `<span>${err.msg}</span>`).join('<br>');
+                } else if (data.error) {
+                    createFormErrorMessage.textContent = data.error;
                 } else {
                     createFormErrorMessage.textContent = 'An unknown error occurred.';
                 }
-                 if (response.status === 401) {
+                if (response.status === 401) {
                     showMessage('Session expired. Please log in again.', 'error');
                     await checkLoginStatus();
                     showView(adminLoginView);
@@ -304,29 +329,139 @@ document.addEventListener('DOMContentLoaded', () => {
                 const forms = await response.json();
                 const form = forms.find(f => f.id === formId);
 
-                if(form && form.auditTrail) {
-                    const trail = JSON.parse(form.auditTrail); // Assuming auditTrail is stored as JSON string
-                    let trailString = `Audit Trail for: ${form.title}\n\n`;
-                    trail.forEach(entry => {
-                        trailString += `Event: ${entry.event}\nTimestamp: ${new Date(entry.timestamp).toLocaleString()}\nIP: ${entry.ip || 'N/A'}\nAdmin: ${entry.admin || 'N/A'}\nHash Signed: ${entry.hash_signed || ''}\nError: ${entry.error || ''}\n\n`;
-                    });
-                    if(form.documentHash) {
-                         trailString += `DOCUMENT HASH (at signing):\n${form.documentHash}\n\n`;
-                    }
-                    if(form.isDigitallySigned) {
-                        trailString += `DIGITAL SIGNATURE STATUS: Signed`;
-                    }
-                    alert(trailString); // Simple alert, could be a modal
-                } else {
-                    showMessage("Audit trail not found or inaccessible.", "error");
+                let trail = [];
+                try {
+                    trail = JSON.parse(form?.auditTrail || '[]');
+                } catch (e) {
+                    showMessage("Audit trail is corrupted or inaccessible.", "error");
+                    return;
                 }
+                if (!form) {
+                    showMessage("Audit trail not found or inaccessible.", "error");
+                    return;
+                }
+                if (trail.length === 0) {
+                    showMessage("No audit trail events found for this form.", "error");
+                    return;
+                }
+                let trailString = `Audit Trail for: ${form.title}\n\n`;
+                trail.forEach(entry => {
+                    trailString += `Event: ${entry.event}\nTimestamp: ${new Date(entry.timestamp).toLocaleString()}\nIP: ${entry.ip || 'N/A'}\nAdmin: ${entry.admin || 'N/A'}\nHash Signed: ${entry.hash_signed || ''}\nError: ${entry.error || ''}\n\n`;
+                });
+                if(form.documentHash) {
+                    trailString += `DOCUMENT HASH (at signing):\n${form.documentHash}\n\n`;
+                }
+                if(form.isDigitallySigned) {
+                    trailString += `DIGITAL SIGNATURE STATUS: Signed`;
+                }
+                alert(trailString);
             } catch (error) {
                 showMessage(`Could not retrieve audit trail: ${error.message}`, "error");
+            }
+        }
+        if (e.target.classList.contains('verify-signature-btn')) {
+            const formId = e.target.dataset.formId;
+            try {
+                const response = await fetch(`/api/forms/${formId}/verify-signature`);
+                const data = await response.json();
+                if (response.ok) {
+                    alert(
+                        data.valid
+                            ? `✅ Signature is VALID for form ${formId}.`
+                            : `❌ Signature is INVALID for form ${formId}.`
+                    );
+                } else {
+                    alert(`Verification failed: ${data.error || 'Unknown error.'}`);
+                }
+            } catch (err) {
+                alert('Network error during verification.');
             }
         }
     });
 
     // --- Parent Logic (Form Listing & Signing) ---
+
+    if (parentRegisterForm) {
+        parentRegisterForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            parentRegisterError.textContent = '';
+            const email = document.getElementById('parentRegEmail').value;
+            const password = document.getElementById('parentRegPassword').value;
+            try {
+                const res = await fetch('/api/parent/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    parentRegisterError.textContent = 'Registration successful! You can now log in.';
+                    parentRegisterError.classList.remove('error-message');
+                    parentRegisterError.classList.add('success-message');
+                } else {
+                    parentRegisterError.textContent = data.error || 'Registration failed.';
+                }
+            } catch {
+                parentRegisterError.textContent = 'Network error.';
+            }
+        });
+    }
+
+    if (parentLoginForm) {
+        parentLoginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            parentLoginError.textContent = '';
+            const email = document.getElementById('parentLoginEmail').value;
+            const password = document.getElementById('parentLoginPassword').value;
+            try {
+                const res = await fetch('/api/parent/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    parentLoginError.textContent = 'Login successful!';
+                    parentLoginError.classList.remove('error-message');
+                    parentLoginError.classList.add('success-message');
+                    // Hide login, registration, forgot forms
+                    parentLoginForm.parentElement.classList.add('hidden');
+                    parentRegisterForm.parentElement.classList.add('hidden');
+                    parentForgotForm.parentElement.classList.add('hidden');
+                    // Show portal area
+                    parentPortalArea.classList.remove('hidden');
+                    // Fill and lock the email field
+                    parentEmailLookupInput.value = email;
+                    parentEmailLookupInput.readOnly = true;
+                    // Auto-submit to show forms immediately
+                    findFormsParent.dispatchEvent(new Event('submit'));
+                } else {
+                    parentLoginError.textContent = data.error || 'Login failed.';
+                }
+            } catch {
+                parentLoginError.textContent = 'Network error.';
+            }
+        });
+    }
+
+    if (parentForgotForm) {
+        parentForgotForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            parentForgotMsg.textContent = '';
+            const email = document.getElementById('parentForgotEmail').value;
+            try {
+                const res = await fetch('/api/parent/forgot', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const data = await res.json();
+                parentForgotMsg.textContent = data.message;
+            } catch {
+                parentForgotMsg.textContent = 'Network error.';
+            }
+        });
+    }
     findFormsParent.addEventListener('submit', async (e) => {
         e.preventDefault();
         parentFormsList.innerHTML = '<p>Loading forms...</p>';
@@ -349,6 +484,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <h4>${form.title} for ${form.studentName}</h4>
                         <p>Status: ${form.status}</p>
                         <p>Description: ${form.description || 'No description.'}</p>
+                        ${form.filePath ? `<a href="/api/download/${form.filePath}" target="_blank">View Attached Document</a>` : ''}
                         ${form.status === 'Pending' ? `<button class="view-sign-btn primary-btn">View & Sign</button>` : `<p>Completed.</p>`}
                     </div>
                 `).join('');
@@ -382,6 +518,26 @@ document.addEventListener('DOMContentLoaded', () => {
         signingErrorMessage.textContent = '';
         signingModal.style.display = 'flex'; // Use flex for centering defined in modal CSS
         resizeCanvas(); // Ensure canvas is sized correctly when modal opens
+    }
+
+    // Log out button for parent
+    if (parentLogoutBtn) {
+        parentLogoutBtn.addEventListener('click', () => {
+            // Hide portal area, show login/registration/forgot forms
+            parentPortalArea.classList.add('hidden');
+            parentLoginForm.parentElement.classList.remove('hidden');
+            parentRegisterForm.parentElement.classList.remove('hidden');
+            parentForgotForm.parentElement.classList.remove('hidden');
+            // Clear sensitive fields and messages
+            parentLoginForm.reset();
+            parentRegisterForm.reset();
+            parentForgotForm.reset();
+            parentLoginError.textContent = '';
+            parentLoginError.classList.remove('success-message', 'error-message');
+            parentEmailLookupInput.value = '';
+            parentFormsArea.classList.add('hidden');
+            parentFormsList.innerHTML = '<p>Enter your email above to find forms.</p>';
+        });
     }
 
     closeSigningModal.addEventListener('click', () => signingModal.style.display = 'none');
